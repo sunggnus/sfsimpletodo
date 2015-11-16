@@ -1,0 +1,189 @@
+%Dieses Package fuehrt das Kommando TODO ein, mit welchem sich ueberall TODOs setzen lassen,
+%auf welche am Anfang des Dokumentes verlinkt wird.
+%author Stefan Flöser
+%this package introduce the command TODO with which it is possible to add todos everywhere in the document
+%it is then possible to create a table of todos 
+\ProvidesPackage{sfsimpletodo}[2014/03/26 v0.5]
+\NeedsTeXFormat{LaTeX2e}
+
+\@ifpackageloaded{ifthen}{}{\RequirePackage{ifthen}}
+
+
+\@ifpackageloaded{hyperref}{}{\RequirePackage[linkcolor=blue,colorlinks=true,bookmarks=true]{hyperref}}
+
+
+
+%\newif\ifcurrfileneeded\currfileneededfalse
+%\newif\iftest\testfalse
+%\IfFileExists{currfile.sty}{\currfileneededfalse
+% }
+%{  \currfileneededtrue}
+%%%%%%%Wennn currfile nicht gefunden werden konnte wird hier der notwendige Quellcode eingefuegt%%%%%
+%\ifcurrfileneeded
+
+%\input{sftodofilename.sty}
+
+%\else
+\@ifpackageloaded{currfile}{}{\RequirePackage{currfile}}
+%\fi
+
+%%%Hauptteil des sftodo Package %%%Mainpart of the package
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newif\ifinterpret %boolean welcher fuer die innerenQuellcode ausfuehren Option benoetigt wird %boolean which is used to decide whether macros within the todo command are executed or not
+\interprettrue
+
+\newif\ifvisible %boolean welcher fuer die Sichtbaroption benoetigt wird. %boolean used for the visibility option
+\visibletrue
+
+\newif\iftodoSource\todoSourcefalse %boolean welcher die Quelldatei angibt %boolean which decides whether thename of the source file is shown or not
+\newif\iftodoLine\todoLinefalse %boolean welcher entscheidet, ob die Zeilennummer angegeben werden soll % if true the line number is visible
+
+\newif\ifnoLineBreak\noLineBreakfalse %boolean welcher entscheidet ob sich die TODOs im Fluss des Textes befinden oder abgesetzt werden. %if true there will be no linebreak before the todo is placed
+\newif\ifContent\Contenttrue %boolean welcher entscheidet ob das Todo Inhaltsverzeichnis angezeigt werden soll % if true the table of todos is shown
+\newif\ifTodoExist\TodoExisttrue %boolean welcher entscheidet ob das Todo im Text angezeigt werden soll. % if true  the todo is shown within the document text
+
+
+\DeclareOption{visible=false}{\visiblefalse} %Optionen um Todos sichtbar oder unsichtbar zu setzen %option to set todos visible or invisible
+\DeclareOption{visible=true}{\visibletrue}
+\DeclareOption{visible}{\visibletrue}
+\DeclareOption{source}{\todoSourcetrue} %Option um die Datei, in welcher das Todo liegt anzugeben % option to decide whether the source file is shwon or not
+\DeclareOption{line}{\todoLinetrue} %Option um die Zeile anzugeben % option for the line number
+\DeclareOption{nobreak}{\noLineBreaktrue} %Option um Todos abzusetzen  % option for linebreaks in front of todos
+\DeclareOption{nobreak=false}{\noLineBreakfalse}
+\DeclareOption{nobreak=true}{\noLineBreaktrue}
+\DeclareOption{nocontent}{\Contentfalse} %Option um das Todoverzeichnis auszublenden % option for the visibility of the table of todos
+\DeclareOption{nocontent=true}{\Contentfalse}
+\DeclareOption{nocontent=false}{\Contenttrue}
+\DeclareOption{notodo}{\TodoExistfalse} %Option um Todos im Text auszublenden % option for the todo visibility in the text
+\DeclareOption{notodo=true}{\TodoExistfalse}
+\DeclareOption{notodo=false}{\TodoExisttrue}
+\DeclareOption{nointerpretation}{\interpretfalse}
+\DeclareOption{interpretation=true}{\interprettrue}
+\DeclareOption{interpretation=false}{\interpretfalse}
+\ProcessOptions\relax
+
+\ifinterpret	%laedt das xstring package falls man das interpretieren unterbinden moechte % loads the xstring package this is only necessary if no interpretation within a todo is wished
+\else
+\@ifpackageloaded{xstring}{}{\RequirePackage{xstring}}
+{
+  \catcode`\|=0 
+  |catcode`|\=12
+  |global|def|removeebs#1{|StrSubstitute[0]{#1}{\}{$|backslash$}}
+}
+
+\newcommand\macroname[1]{%
+  \expandafter\removeebs{\detokenize{#1} } }
+\fi
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\global\def\toclevel@chtodo{0}
+
+%angelehnt an  den l@chapter Befehl: (zum glueck gibt es den show Befehl welcher zurueck gibt wie ein Makro definiert ist)
+\newcommand{\l@chtodo}[2]{\ifnum \c@tocdepth >\m@ne \addpenalty {-\@highpenalty }\vskip 1.0em \@plus \p@ \setlength \@tempdima {1.5em}\begingroup \parindent \z@ \rightskip \@pnumwidth \parfillskip -\@pnumwidth \leavevmode \bfseries \advance \leftskip \@tempdima \hskip -\leftskip #1\nobreak \hfil \nobreak \hb@xt@ \@pnumwidth {\hss #2}\par \penalty \@highpenalty \endgroup \fi  }
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\global\newcount\c@NumberOfTodos %texcode zum setzen eines counters welcher durch die Vorsilbe c@ als Latex Counter behandelt wird
+\c@NumberOfTodos 1\relax %setzen eines Counterwertes 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%fuer Linux noetig aus Windowsdatei kopiert%%%%%%%%%%%% only on linux systems relevant maybe different package versions?
+\@ifundefined{ifHy@localanchorname}{
+\newif\ifHy@localanchorname
+
+\def\Hy@MakeCurrentHref#1{%
+  \edef\HyperLocalCurrentHref{#1}%
+  \@onelevel@sanitize\HyperLocalCurrentHref
+  \global\let\HyperGlobalCurrentHref\HyperLocalCurrentHref
+  \let\HyperLocalCurrentHref\HyperGlobalCurrentHref
+  \ifHy@localanchorname
+    \let\@currentHref\HyperLocalCurrentHref
+  \else
+    \global\let\@currentHref\HyperGlobalCurrentHref
+  \fi
+}
+}{}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\TODO}[1]{
+\ifvisible %spricht auf die Sichtbaroption an
+\ifTodoExist %spricht auf die Todo in Text Anzeigeoption an
+%Anker fuer den Hyperlink wird gesetzt
+
+\Hy@MakeCurrentHref{chtodo.\arabic{NumberOfTodos}}
+\Hy@raisedlink {\hyper@anchorstart {\@currentHref }\hyper@anchorend }
+
+%Farbe des Todoeintrages wird gesetzt zusammen mit dem Eintrag.
+%\iftodoSource Quelle: \locationOfTodo \fi
+\textbf{\textsc{\textcolor{red}{(TODO: \ifinterpret #1 \else \expandafter\removeebs{\detokenize{#1} } \fi
+ \iftodoSource | Quelle: \currfilename \fi \iftodoLine | Zeile: \the\inputlineno \fi )}}}
+
+%Die notwendigen Eintragungen in der aux Datei werden vorgenommen.
+\protected@write\@auxout{}{
+%\arabic{NumberOfTodos}; TODO: #1
+\string\@writefile\string{todo\string}\string{\string\contentsline\string{chtodo\string}\string{\string\numberline \string{\arabic{NumberOfTodos}\string} \ifinterpret %
+#1 %
+\else %
+ \string\expandafter\string\removeebs\string{\detokenize{\detokenize{#1} } \string} %
+ \fi \iftodoSource | Quelle: \currfilename \fi \iftodoLine | Zeile: \the\inputlineno \fi \string}\string{\arabic{page}\string}\string{chtodo.\arabic{NumberOfTodos}\string}\string}
+}
+\advance \c@NumberOfTodos by 1 \relax  %der Counter wird um eins erhoeht
+
+\fi
+\fi
+} %TODOs werden im kompilierten Text markiert
+
+
+%%%%%%%%%%%%%%%%%%%%%%%falls keine Zeilenumbrueche erzeugt werden sollen%%%%%%%%%%%%%
+\ifnoLineBreak %spricht auf die Zeilenumbruchoption an.
+\ifTodoExist %spricht auf die Todo in Text Anzeigeoption an
+\renewcommand{\TODO}[1]{ %
+\ifvisible %spricht auf die Sichtbaroption an
+%Anker fuer den Hyperlink wird gesetzt
+%
+\Hy@MakeCurrentHref{chtodo.\arabic{NumberOfTodos}}%
+\Hy@raisedlink {\hyper@anchorstart {\@currentHref }\hyper@anchorend }%
+%
+%Farbe des Todoeintrages wird gesetzt zusammen mit dem Eintrag.
+%\iftodoSource Quelle: \locationOfTodo \fi
+\textbf{\textsc{\textcolor{red}{(TODO: \ifinterpret #1 \else %
+ \expandafter\removeebs{\detokenize{#1} } \fi   \iftodoSource | Quelle: \currfilename \fi \iftodoLine | Zeile: \the\inputlineno \fi )}}}%
+%
+%Die notwendigen Eintragungen in der aux Datei werden vorgenommen. % creates necessary entries in the aux file
+\protected@write\@auxout{}{%
+%\arabic{NumberOfTodos}; TODO: #1
+\string\@writefile\string{todo\string}\string{\string\contentsline\string{chtodo\string}\string{\string\numberline \string{\arabic{NumberOfTodos}\string} \ifinterpret %
+#1 %
+\else %
+ \string\expandafter\string\removeebs\string{\detokenize{\detokenize{#1} } \string} %
+ \fi  \iftodoSource | Quelle: \currfilename \fi \iftodoLine | Zeile: \the\inputlineno \fi \string}\string{\arabic{page}\string}\string{chtodo.\arabic{NumberOfTodos}\string}\string}%
+}%
+\advance \c@NumberOfTodos by 1 \relax  %der Counter wird um eins erhoeht
+%
+\fi%
+%
+} %TODOs werden im kompilierten Text markiert
+\fi
+\fi
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%Erzeugt das Todo Verzeichnis: % creates the table of todos
+
+
+\newcommand{\makeTODOList}{%
+\ifvisible  %spricht auf die Sichtbaroption an
+\ifContent %spricht auf die Content visible Option an.
+\section*{Todos}
+\newcommand{\oldcoloroflink}[1]{}
+\let\oldcoloroflink\@linkcolor
+\HyColor@HyperrefColor{red}\@linkcolor %Die Todoliste wird rot
+\@starttoc{todo}%
+\newpage
+\renewcommand{\@linkcolor}{\oldcoloroflink}
+\fi
+\fi
+    }
+
+
+\endinput

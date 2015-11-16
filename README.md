@@ -1,6 +1,6 @@
 the simple todo package
 
-adding todos to a latex file
+adding todos to a LaTeX file
 creating a table of todos
 show the position in the source of the todo
 show the filename of the file the todo was added

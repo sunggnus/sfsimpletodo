@@ -23,6 +23,21 @@ version 2005/12/01 or later.
 the sfsimpletodo package consists of the following files:
 sfsimpletodo.sty
 
+-------------------------------------------------------------------------
+It adds the following two commands:
+\TODO{todotext} % creates a todo 
+\makeTODOList % adds a table of todos here
+
+It has the following options:
+visible=false/true - makes the todos and the table of todos visible/invisible
+source - adds the source file to the todo
+line - adds the source line number to the todo
+nobreak=false/true - creates a linebreak before the todo
+nocontent=true/false - if true the table of todos is invisible
+notodo=true/false - if true the todos within the text are invisible
+nointerpretation - makros within the todo command aren't executed
+
+
 --------------------------------------------------------------------------
 If you have any ideas, questions, suggestions or bugs to report, please
 feel free to contact me.

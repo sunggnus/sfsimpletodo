@@ -7,7 +7,10 @@ show the filename of the file the todo was added
 
 To test the package just copy the sty file to the directory of your tex project.
 You can include the package e.g. with the following options:
+
 \usepackage[visible=true,line,source,nobreak]{sfsimpletodo}
+
+
 ------------------
 Stefan Flöser
 
